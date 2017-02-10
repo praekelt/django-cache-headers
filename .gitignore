@@ -1,0 +1,16 @@
+*.swp
+*.pyc
+*.egg-info
+build/
+dist/
+*.swo
+.pydevproject
+.project
+.settings/
+*~
+*.egg
+ve/
+layers.db
+coverage.xml
+pep8.txt
+.tox

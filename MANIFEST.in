@@ -1,0 +1,7 @@
+# Ex
+include README.rst
+include README.rst
+include AUTHORS.rst
+include CHANGELOG.rst
+include LICENSE
+recursive-include cache_headers *
