@@ -5,8 +5,6 @@ Django Cache Headers
    :align: center
    :alt: Travis
 
-   Travis
-
 Overview
 --------
 
