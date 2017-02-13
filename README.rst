@@ -32,7 +32,7 @@ Django Cache Headers provides four caching policies. You may define your own pol
 Settings
 --------
 
-The ``timeouts`` key combines the policy, timeout in seconds and URL regexes in a nested dictionary.
+The ``timeouts`` key combines the policy, timeout in seconds and URL regexes in a nested dictionary::
 
     CACHE_HEADERS = {
         "timeouts": {
