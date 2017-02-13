@@ -1,6 +1,6 @@
 import datetime
 
-from cache_middleware.utils import httpdate
+from cache_headers.utils import httpdate
 
 
 def all_users(request, response, user, age):
@@ -32,7 +32,7 @@ def anonymous_and_authenticated(request, response, user, age):
     response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d" % max(age / 6, 30)
-    response["X-Is-Authenticated"] = user.is_authenticated()
+    response["X-Is-Authenticated"] = user.is_authenticated() and 1 or 0
     response["Vary"] = "Accept-Encoding,X-Is-Authenticated"
 
 

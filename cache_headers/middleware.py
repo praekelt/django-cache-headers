@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponseRedirect
 
-from cache_middleware import policies
+from cache_headers import policies
 
 
 # Default policies. Settings may override keys.
@@ -17,12 +17,12 @@ POLICIES = {
     "per-user": policies.per_user
 }
 try:
-    POLICIES.update(settings.CACHE_MIDDLEWARE["policies"])
+    POLICIES.update(settings.CACHE_HEADERS["policies"])
 except (KeyError, AttributeError):
     pass
 
 try:
-    TIMEOUTS = settings.CACHE_MIDDLEWARE["timeouts"]
+    TIMEOUTS = settings.CACHE_HEADERS["timeouts"]
 except (KeyError, AttributeError):
     TIMEOUTS = {}
 
@@ -30,8 +30,13 @@ except (KeyError, AttributeError):
 POLICIES_KEYS = POLICIES.keys()
 POLICIES_KEYS.sort()
 
+# Compile regexes
+for cache_type in TIMEOUTS.keys():
+    for k, v in TIMEOUTS[cache_type].items():
+        TIMEOUTS[cache_type][k] = re.compile("r|".join(v))
 
-class Middleware(object):
+
+class CacheHeadersMiddleware(object):
     """Put this middleware before authentication middleware because response
     runs in reverse order."""
 
@@ -65,7 +70,7 @@ class Middleware(object):
             return response
 
         # Determine age and policy. Use cached lookups.
-        key = "dch-%s" % hashlib.md5.new(request.path_info).hexdigest()
+        key = "dch-%s" % hashlib.md5(request.path_info).hexdigest()
         cached = cache.get(key, None)
         if cached is not None:
             age = cached["age"]
