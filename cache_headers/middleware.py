@@ -70,7 +70,8 @@ class CacheHeadersMiddleware(object):
             return response
 
         # Determine age and policy. Use cached lookups.
-        key = "dch-%s" % hashlib.md5(request.path_info).hexdigest()
+        full_path = request.get_full_path()
+        key = "dch-%s" % hashlib.md5(full_path).hexdigest()
         cached = cache.get(key, None)
         if cached is not None:
             age = cached["age"]
@@ -82,7 +83,7 @@ class CacheHeadersMiddleware(object):
                 if found:
                     break
                 for key in TIMEOUTS.get(cache_type, {}).keys():
-                    if TIMEOUTS[cache_type][key].match(request.path_info):
+                    if TIMEOUTS[cache_type][key].match(full_path):
                         age = key
                         policy = POLICIES[cache_type]
                         found = True
@@ -95,7 +96,7 @@ class CacheHeadersMiddleware(object):
         # If request contains messages adjust url so it busts reverse cache.
         # This applies only to paths that would otherwise be cached.
         if age and request:
-            pth = request.get_full_path()
+            pth = full_path
             # Return if already marked
             if "dch-uuid=" in pth:
                 return response
