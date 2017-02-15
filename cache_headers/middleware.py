@@ -42,6 +42,10 @@ class CacheHeadersMiddleware(object):
 
     def process_response(self, request, response):
 
+        # If cache control is already set do nothing
+        if ("Cache-Control" in response)  or ("cache-control" in response):
+            return response
+
         # Default
         response["Cache-Control"] = "no-cache"
 
