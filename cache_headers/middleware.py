@@ -33,7 +33,7 @@ POLICIES_KEYS.sort()
 # Compile regexes
 for cache_type in TIMEOUTS.keys():
     for k, v in TIMEOUTS[cache_type].items():
-        TIMEOUTS[cache_type][k] = re.compile("r|".join(v))
+        TIMEOUTS[cache_type][k] = re.compile(r"" + "|".join(v))
 
 
 class CacheHeadersMiddleware(object):
