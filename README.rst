@@ -22,7 +22,7 @@ Installation
 
 Policies
 --------
-Django Cache Headers provides four caching policies. You may define your own policies.::
+Django Cache Headers provides four caching policies. You may define your own policies.:
 
 1. all-users - response is marked as cached once for all users.
 2. anonymous-only - response is marked as cached once only for anonymous users.
