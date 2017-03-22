@@ -1,0 +1,7 @@
+{% if request.user.is_anonymous %}
+    You are anonymous
+{% endif %}
+
+{% if request.user.is_authenticated %}
+    You are authenticated as {{ request.user.pk }}
+{% endif %}
