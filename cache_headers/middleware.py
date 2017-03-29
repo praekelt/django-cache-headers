@@ -46,12 +46,16 @@ class CacheHeadersMiddleware(object):
         if ("Cache-Control" in response)  or ("cache-control" in response):
             return response
 
-        # Default
-        response["Cache-Control"] = "no-cache"
-
         # Do not interfere in debug mode
         if settings.DEBUG:
             return response
+
+        # Do notging if response code is not 200
+        if response.status_code != 200:
+            return response
+
+        # Default
+        response["Cache-Control"] = "no-cache"
 
         user = getattr(request, "user", None)
         if not user:
