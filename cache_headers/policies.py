@@ -27,7 +27,10 @@ def anonymous_only(request, response, user, age):
 
 def anonymous_and_authenticated(request, response, user, age):
     """Content is cached once for anonymous users and once for authenticated
-    users."""
+    users. There is an inherent risk in caching authenticated content. It is
+    not so much a security risk as a leakage risk. For example, if your site
+    has a paywall then it is easy to circumvent the paywall by spoofing the
+    X-Is-Authenticated vary header."""
 
     response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
     response["X-Accel-Expires"] = age
@@ -49,7 +52,7 @@ def per_user(request, response, user, age):
         response["Vary"] = "Accept-Encoding,X-Is-Anonymous"
     else:
         # It is vitally important that the page does not leak personal info
-        # because spoofing os X-User is trivial. This is the responsibility of
+        # because spoofing of X-User is trivial. This is the responsibility of
         # the page, not us.
         response["X-User"] = user.pk
         response["Vary"] = "Accept-Encoding,X-User"
