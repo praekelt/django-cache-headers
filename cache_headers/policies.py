@@ -7,8 +7,10 @@ def all_users(request, response, user, age):
     """Content is cached once for all users."""
 
     response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
+    # nginx specific but safe to set in all cases
     response["X-Accel-Expires"] = age
-    response["Cache-Control"] = "max-age=%d" % max(age / 6, 30)
+    response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
+        % (max(age / 6, 30), age)
     response["Vary"] = "Accept-Encoding"
 
 
@@ -17,8 +19,10 @@ def anonymous_only(request, response, user, age):
 
     if user.is_anonymous():
         response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
+        # nginx specific but safe to set in all cases
         response["X-Accel-Expires"] = age
-        response["Cache-Control"] = "max-age=%d" % max(age / 6, 30)
+        response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
+            % (max(age / 6, 30), age)
         response["X-Is-Anonymous"] = 1
         response["Vary"] = "Accept-Encoding,X-Is-Anonymous"
     else:
@@ -33,8 +37,10 @@ def anonymous_and_authenticated(request, response, user, age):
     X-Is-Authenticated vary header."""
 
     response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
+    # nginx specific but safe to set in all cases
     response["X-Accel-Expires"] = age
-    response["Cache-Control"] = "max-age=%d" % max(age / 6, 30)
+    response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
+        % (max(age / 6, 30), age)
     response["X-Is-Authenticated"] = user.is_authenticated() and 1 or 0
     response["Vary"] = "Accept-Encoding,X-Is-Authenticated"
 
@@ -44,15 +50,18 @@ def per_user(request, response, user, age):
     user individually."""
 
     response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
+    # nginx specific but safe to set in all cases
     response["X-Accel-Expires"] = age
-    response["Cache-Control"] = "max-age=%d" % max(age / 6, 30)
+    response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
+        % (max(age / 6, 30), age)
 
     if user.is_anonymous():
-        response["X-Is-Anonymous"] = 1
-        response["Vary"] = "Accept-Encoding,X-Is-Anonymous"
+        response["X-Session"] = 0
+        response["Vary"] = "Accept-Encoding,X-Session"
     else:
-        # It is vitally important that the page does not leak personal info
-        # because spoofing of X-User is trivial. This is the responsibility of
-        # the page, not us.
-        response["X-User"] = user.pk
-        response["Vary"] = "Accept-Encoding,X-User"
+        # Spoofing X-Session is only possible in case of a man-in-the-middle
+        # attack or a very lucky guess. Still, when in doubt don't use this
+        # policy and rather adjust your reverse caching proxy to consider the
+        # session cookie.
+        response["X-Session"] = request.session._session_key
+        response["Vary"] = "Accept-Encoding,X-Session"

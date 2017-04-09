@@ -68,27 +68,27 @@ CACHE_HEADERS = {
     "policies": {"custom-policy": custom_policy},
     "timeouts": {
         "all-users": {
-            60: (
+            600: (
                 "^/all-users/",
             )
         },
         "anonymous-only": {
-            60: (
+            600: (
                 "^/anonymous-only/",
             )
         },
         "anonymous-and-authenticated": {
-            60: (
+            600: (
                 "^/anonymous-and-authenticated/",
             )
         },
         "per-user": {
-            60: (
+            600: (
                 "^/per-user/",
             )
         },
         "custom-policy": {
-            60: (
+            600: (
                 "^/custom-policy/",
             )
         }
