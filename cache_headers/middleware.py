@@ -63,6 +63,8 @@ class CacheHeadersMiddleware(object):
             response["Cache-Control"] = "no-cache"
             return response
 
+        # During login we need to be careful to not accidentally cache. The
+        # is_authenticated cookie helps to determine the state.
         if user.is_authenticated() and not request.COOKIES.get("is_authenticated"):
             expires = request.session.get_expiry_date()
             response.set_cookie("is_authenticated", 1, expires=expires)
