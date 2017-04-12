@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.1.3
+-----
 #. Handle case where user may also be logged in and a cookie not being set.
 
 0.1.2
