@@ -42,15 +42,16 @@ class CacheHeadersMiddleware(object):
 
     def process_response(self, request, response):
 
-        # If cache control is already set do nothing
-        if ("Cache-Control" in response)  or ("cache-control" in response):
-            return response
-
         # Do not interfere in debug mode
         if settings.DEBUG:
             return response
 
-        # Do notging if response code is not 200
+        # Record whether cache control is set
+        has_cache_control = False
+        if ("Cache-Control" in response) or ("cache-control" in response):
+            has_cache_control = True
+
+        # Do nothing if response code is not 200
         if response.status_code != 200:
             return response
 
@@ -75,6 +76,12 @@ class CacheHeadersMiddleware(object):
 
         # Never cache non-GET
         if request.method.lower() not in ("get", "head"):
+            return response
+
+        # If cache control was set at the start of this method then do nothing.
+        # We only return here because is_authenticated needs opportunity to be
+        # set.
+        if has_cache_control:
             return response
 
         # Determine age and policy. Use cached lookups.
