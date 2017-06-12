@@ -64,15 +64,15 @@ class CacheHeadersMiddleware(object):
             return response
 
         # During login we need to be careful to not accidentally cache. The
-        # is_authenticated cookie helps to determine the state.
-        if user.is_authenticated() and not request.COOKIES.get("is_authenticated"):
+        # isauthenticated cookie helps to determine the state.
+        if user.is_authenticated() and not request.COOKIES.get("isauthenticated"):
             expires = request.session.get_expiry_date()
-            response.set_cookie("is_authenticated", 1, expires=expires)
+            response.set_cookie("isauthenticated", 1, expires=expires)
             response["Cache-Control"] = "no-cache"
             return response
 
-        if not user.is_authenticated() and request.COOKIES.get("is_authenticated"):
-            response.delete_cookie("is_authenticated")
+        if not user.is_authenticated() and request.COOKIES.get("isauthenticated"):
+            response.delete_cookie("isauthenticated")
             response["Cache-Control"] = "no-cache"
             return response
 
@@ -81,7 +81,7 @@ class CacheHeadersMiddleware(object):
             return response
 
         # If cache control was set at the start of this method then do nothing.
-        # We only return here because is_authenticated needs opportunity to be
+        # We only return here because isauthenticated needs opportunity to be
         # set.
         if has_cache_control:
             return response
