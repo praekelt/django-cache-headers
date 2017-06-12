@@ -60,18 +60,15 @@ class CacheMiddlewareTest(TestCase):
             response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
         )
         self.assertEqual(
-            response._headers["x-is-anonymous"],
-            ("X-Is-Anonymous", "1")
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages")
         )
-        self.failUnless("X-Is-Anonymous" in response._headers["vary"][1])
 
         self.login()
         response = self.client.get(anonymous_only)
         self.assertEqual(
             response._headers["cache-control"], ("Cache-Control", "no-cache")
         )
-        self.failIf("x-is-anonymous" in response._headers)
-        self.failIf("X-Is-Anonymous" in response._headers["vary"][1])
 
     def test_anonymous_and_authenticated(self):
         response = self.client.get(anonymous_and_authenticated)
@@ -82,10 +79,9 @@ class CacheMiddlewareTest(TestCase):
             response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
         )
         self.assertEqual(
-            response._headers["x-is-authenticated"],
-            ("X-Is-Authenticated", "0")
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
-        self.failUnless("X-Is-Authenticated" in response._headers["vary"][1])
 
         self.login()
         response = self.client.get(anonymous_and_authenticated)
@@ -96,11 +92,9 @@ class CacheMiddlewareTest(TestCase):
             response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
         )
         self.assertEqual(
-            response._headers["x-is-authenticated"],
-            ("X-Is-Authenticated", "1")
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
-
-        self.failUnless("X-Is-Authenticated" in response._headers["vary"][1])
 
     def test_per_user(self):
         response = self.client.get(per_user)
@@ -111,10 +105,9 @@ class CacheMiddlewareTest(TestCase):
             response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
         )
         self.assertEqual(
-            response._headers["x-session"],
-            ("X-Session", "0")
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages|sessionid")
         )
-        self.failUnless("X-Session" in response._headers["vary"][1])
 
         self.login()
         response = self.client.get(per_user)
@@ -124,11 +117,10 @@ class CacheMiddlewareTest(TestCase):
         self.assertEqual(
             response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
         )
-        self.assertNotEqual(
-            response._headers["x-session"],
-            ("X-Session", "0")
+        self.assertEqual(
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages|sessionid")
         )
-        self.failUnless("X-Session" in response._headers["vary"][1])
 
     def test_custom_policy(self):
         response = self.client.get(custom_policy)

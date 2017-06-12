@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import re
 import uuid
 
@@ -132,6 +133,14 @@ class CacheHeadersMiddleware(object):
 
         if age:
             policy(request, response, user, age)
+
+            # Warn on potentially erroneous usage
+            if "Set-Cookie" in response:
+                logger = logging.getLogger("django")
+                logger.warn(
+                    "Caching path %s but Set-Cookie is on the response" \
+                        % full_path
+                )
         else:
             response["Cache-Control"] = "no-cache"
 
