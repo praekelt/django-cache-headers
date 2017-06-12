@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.2
+---
 #. Ignoring cookies completely when setting headers turned out to be a mistake due to too many security concerns. Restore them.
 
 0.1.3
