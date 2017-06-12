@@ -52,5 +52,5 @@ def per_user(request, response, user, age):
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
         % (max(age / 6, 30), age)
-    response["X-Hash-Cookies"] = "sessionid|messages"
+    response["X-Hash-Cookies"] = "messages|sessionid"
     response["Vary"] = "Accept-Encoding,Cookie"
