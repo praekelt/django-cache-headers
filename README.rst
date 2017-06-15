@@ -32,6 +32,8 @@ Django Cache Headers provides four caching policies. You may define your own pol
 Sample Varnish config file
 --------------------------
 
+Save this snippet as `/etc/varnish/default.vcl`::
+
     # Use 4.0 format
     vcl 4.0;
 
