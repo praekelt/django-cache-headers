@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.2.1
+-----
 #. Use an OrderedDict for guaranteed policy iteration order.
 
 0.2
