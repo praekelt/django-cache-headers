@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Use an OrderedDict for guaranteed policy iteration order.
+
 0.2
 ---
 #. Ignoring cookies completely when setting headers turned out to be a mistake due to too many security concerns. Restore them.
