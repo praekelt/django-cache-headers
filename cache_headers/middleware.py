@@ -94,13 +94,13 @@ class CacheHeadersMiddleware(object):
         cached = cache.get(key, None)
         if cached is not None:
             age = cached["age"]
-            policy = POLICIES[cached["cache_type"]]
+            cache_type = cached["cache_type"]
         else:
             age = 0
+            cache_type = None
             for pattern, timeout, cache_type, _ in rules:
                 if pattern.match(full_path):
                     age = timeout
-                    policy = POLICIES[cache_type]
                     break
 
             # We can cache this for a long time because settings can't change
@@ -128,6 +128,7 @@ class CacheHeadersMiddleware(object):
                 return HttpResponseRedirect(pth)
 
         if age:
+            policy = POLICIES[cache_type]
             policy(request, response, user, age)
 
             # Warn on potentially erroneous usage
