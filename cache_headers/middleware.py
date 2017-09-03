@@ -12,10 +12,10 @@ from cache_headers import policies
 
 # Default policies. Settings may override keys.
 POLICIES = {
-    ("all-users", policies.all_users),
-    ("anonymous-only", policies.anonymous_only),
-    ("anonymous-and-authenticated", policies.anonymous_and_authenticated),
-    ("per-user", policies.per_user)
+    "all-users": policies.all_users,
+    "anonymous-only": policies.anonymous_only,
+    "anonymous-and-authenticated": policies.anonymous_and_authenticated,
+    "per-user": policies.per_user
 }
 try:
     POLICIES.update(settings.CACHE_HEADERS["policies"])
