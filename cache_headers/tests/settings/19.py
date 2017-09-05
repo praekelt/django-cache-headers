@@ -66,6 +66,7 @@ TEMPLATES = [
 
 CACHE_HEADERS = {
     "policies": {"custom-policy": custom_policy},
+    "browser-cache-seconds": 100,
     "timeouts": {
         "all-users": {
             600: (
