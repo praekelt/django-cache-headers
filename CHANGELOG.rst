@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.2.2
+-----
 #. Iterate over regexes in order of most specific (longest) to least specific (shortest).
 #. Revert OrderedDict change since it is not required anymore due to the above change.
 
