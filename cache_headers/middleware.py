@@ -1,4 +1,3 @@
-import collections
 import hashlib
 import logging
 import re
@@ -12,12 +11,12 @@ from cache_headers import policies
 
 
 # Default policies. Settings may override keys.
-POLICIES = collections.OrderedDict((
-    ("all-users", policies.all_users),
-    ("anonymous-only", policies.anonymous_only),
-    ("anonymous-and-authenticated", policies.anonymous_and_authenticated),
-    ("per-user", policies.per_user)
-))
+POLICIES = {
+    "all-users": policies.all_users,
+    "anonymous-only": policies.anonymous_only,
+    "anonymous-and-authenticated": policies.anonymous_and_authenticated,
+    "per-user": policies.per_user
+}
 try:
     POLICIES.update(settings.CACHE_HEADERS["policies"])
 except (KeyError, AttributeError):
@@ -28,14 +27,15 @@ try:
 except (KeyError, AttributeError):
     TIMEOUTS = {}
 
-# Pre-compute sorted keys
-POLICIES_KEYS = POLICIES.keys()
-POLICIES_KEYS.sort()
-
-# Compile regexes
+# Build a flat list of rules
+rules = []
 for cache_type in TIMEOUTS.keys():
-    for k, v in TIMEOUTS[cache_type].items():
-        TIMEOUTS[cache_type][k] = re.compile(r"" + "|".join(v))
+    for timeout, strings in TIMEOUTS[cache_type].items():
+        for s in strings:
+            rules.append((re.compile(r"" + s), timeout, cache_type, len(s)))
+
+# Sort from longest string to shortest
+rules.sort(key=lambda x: x[3], reverse=True)
 
 
 class CacheHeadersMiddleware(object):
@@ -94,19 +94,14 @@ class CacheHeadersMiddleware(object):
         cached = cache.get(key, None)
         if cached is not None:
             age = cached["age"]
-            policy = POLICIES[cached["cache_type"]]
+            cache_type = cached["cache_type"]
         else:
             age = 0
-            found = False
-            for cache_type in POLICIES_KEYS:
-                if found:
+            cache_type = None
+            for pattern, timeout, cache_type, _ in rules:
+                if pattern.match(full_path):
+                    age = timeout
                     break
-                for key in TIMEOUTS.get(cache_type, {}).keys():
-                    if TIMEOUTS[cache_type][key].match(full_path):
-                        age = key
-                        policy = POLICIES[cache_type]
-                        found = True
-                        break
 
             # We can cache this for a long time because settings can't change
             # during the process lifetime.
@@ -133,6 +128,7 @@ class CacheHeadersMiddleware(object):
                 return HttpResponseRedirect(pth)
 
         if age:
+            policy = POLICIES[cache_type]
             policy(request, response, user, age)
 
             # Warn on potentially erroneous usage

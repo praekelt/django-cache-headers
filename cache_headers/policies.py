@@ -1,6 +1,14 @@
 import datetime
 
+from django.conf import settings
+
 from cache_headers.utils import httpdate
+
+
+try:
+    browser_cache_seconds = settings.CACHE_HEADERS["browser-cache-seconds"]
+except (KeyError, AttributeError):
+    browser_cache_seconds = 5
 
 
 def all_users(request, response, user, age):
@@ -10,7 +18,7 @@ def all_users(request, response, user, age):
     # nginx specific but safe to set in all cases
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
-        % (max(age / 6, 30), age)
+        % (browser_cache_seconds, age)
     response["X-Hash-Cookies"] = "messages"
     response["Vary"] = "Accept-Encoding,Cookie"
 
@@ -23,7 +31,7 @@ def anonymous_only(request, response, user, age):
         # nginx specific but safe to set in all cases
         response["X-Accel-Expires"] = age
         response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
-            % (max(age / 6, 30), age)
+            % (browser_cache_seconds, age)
         response["X-Hash-Cookies"] = "messages"
         response["Vary"] = "Accept-Encoding,Cookie"
     else:
@@ -38,7 +46,7 @@ def anonymous_and_authenticated(request, response, user, age):
     # nginx specific but safe to set in all cases
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
-        % (max(age / 6, 30), age)
+        % (browser_cache_seconds, age)
     response["X-Hash-Cookies"] = "messages|isauthenticated"
     response["Vary"] = "Accept-Encoding,Cookie"
 
@@ -51,6 +59,6 @@ def per_user(request, response, user, age):
     # nginx specific but safe to set in all cases
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
-        % (max(age / 6, 30), age)
+        % (browser_cache_seconds, age)
     response["X-Hash-Cookies"] = "messages|sessionid"
     response["Vary"] = "Accept-Encoding,Cookie"
