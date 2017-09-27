@@ -32,7 +32,7 @@ Django Cache Headers provides four caching policies. You may define your own pol
 Sample Varnish config file
 --------------------------
 
-Save the contents of `<sample.vcl>_` as `/etc/varnish/default.vcl`.
+Save the contents of `sample.vcl`_ as `/etc/varnish/default.vcl`.
 
 Settings
 --------
