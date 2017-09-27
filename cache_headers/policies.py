@@ -10,6 +10,11 @@ try:
 except (KeyError, AttributeError):
     browser_cache_seconds = 5
 
+# We add Cookie to Vary in all cases to compensate for overzealous intermediary
+# proxies we have no control over. The presence of Cookie will avoid any
+# accidental shared caching of per-user content. Our sample Varnish
+# configuration file is smart enough to omit Cookie from the Vary header when
+# computing the hash.
 
 def all_users(request, response, user, age):
     """Content is cached once for all users."""
