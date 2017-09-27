@@ -33,11 +33,6 @@ Django Cache Headers provides four caching policies. You may define your own pol
 3. anonymous-and-authenticated - response is marked as cached once for anonymous users and once for authenticated users.
 4. per-user - response is marked as cached once for anonymous users and for each authenticated user individually.
 
-Sample Varnish config file
---------------------------
-
-Save the contents of `sample.vcl <sample.vcl>`_ as `/etc/varnish/default.vcl`.
-
 Settings
 --------
 
@@ -77,4 +72,14 @@ Set ``browser-cache-seconds`` to specify how long the browser may cache a
 response before it has to revalidate with the server. It defaults to 5 seconds.::
 
     CACHE_HEADERS = {"browser-cache-seconds": 10}
+
+Varnish configuration
+---------------------
+
+Generate the VCL snippet::
+
+    python manage.py generate_vcl > /path/to/generated.vcl
+
+Save the contents of `sample.vcl <sample.vcl>`_ as `/etc/varnish/default.vcl`.
+Restart Varnish for the configuration to take effect.
 

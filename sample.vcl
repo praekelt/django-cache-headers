@@ -21,12 +21,10 @@ sub vcl_recv {
         }
         return(purge);
     }
-
     if (req.method == "PRI") {
         # We do not support SPDY or HTTP/2.0
         return(synth(405));
     }
-
     if (req.method != "GET" &&
       req.method != "HEAD" &&
       req.method != "PUT" &&
@@ -37,7 +35,6 @@ sub vcl_recv {
         # Non-RFC2616 or CONNECT which is weird
         return(pipe);
     }
-
     if (req.method != "GET" && req.method != "HEAD") {
         # We only deal with GET and HEAD by default
         return(pass);
@@ -50,9 +47,9 @@ sub vcl_recv {
 }
 
 sub vcl_backend_response {
-    # Make no assumptions about the state of vary before hand. All that is
-    # needed, is to temporarily replace Cookie in the Vary header while it
-    # gets passed through the rest of the Varnish functions.
+    # Make no assumptions about the state of Vary before hand. All that is
+    # needed is to temporarily remove Cookie from the Vary header while it
+    # gets passed through the rest of the varnish functions.
     set beresp.http.Original-Vary = beresp.http.Vary;
     set beresp.http.Vary = regsub(beresp.http.Vary, "Cookie", "Substitute");
 }
@@ -62,13 +59,6 @@ sub vcl_deliver {
         set resp.http.X-Cache = "HIT";
     } else {
         set resp.http.X-Cache = "MISS";
-        # Django cache headers may not set the cookie directly because that
-        # leads to a Set-Cookie header. Varnish interprets the presence of that
-        # header as a "do not cache" instruction, which would defeat the entire
-        # purpose of what we are doing.
-        if (resp.http.X-Hash-Cookies) {
-            set resp.http.Set-Cookie = "hashcookies=" + resp.http.X-Hash-Cookies;
-        }
     }
 
     # Replace the original Vary header on the response
@@ -78,32 +68,4 @@ sub vcl_deliver {
     unset resp.http.Original-Vary;
 }
 
-sub vcl_hash {
-    # Cache even with cookies present. Note we don't delete the cookies. Also,
-    # we only consider cookies listed in the cookie named hashcookies as part
-    # of the hash. This list is determined by the relevant Django Cache Headers
-    # policy.
-    set req.http.Hash-Cookies = regsub(req.http.Cookie, ".*hashcookies=([^;]+).*", "\1");
-    set req.http.Hash-Value = "x";
-    if (req.http.Hash-Cookies) {
-        # todo: softcode these checks
-        if (req.http.Hash-Cookies ~ "messages") {
-            if (req.http.Cookie ~ "messages=") {
-                set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*messages=([^;]+).*", "\1");
-            }
-        }
-        if (req.http.Hash-Cookies == "messages|isauthenticated") {
-            if (req.http.Cookie ~ "isauthenticated=") {
-                set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*isauthenticated=([^;]+).*", "\1");
-            }
-        }
-        else if (req.http.Hash-Cookies == "messages|sessionid") {
-            if (req.http.Cookie ~ "sessionid=") {
-                set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*sessionid=([^;]+).*", "\1");
-            }
-        }
-    }
-    hash_data(req.http.Hash-Value);
-    unset req.http.Hash-Cookies;
-    unset req.http.Hash-Value;
-}
+include "/path/to/generated.vcl";
