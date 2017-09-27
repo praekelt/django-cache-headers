@@ -91,32 +91,44 @@ Save this snippet as `/etc/varnish/default.vcl`::
             set resp.http.X-Cache = "HIT";
         } else {
             set resp.http.X-Cache = "MISS";
+            # Django cache headers may not set the cookie directly because that
+            # leads to a Set-Cookie header. Varnish interprets the presence of that
+            # header as a "do not cache" instruction, which would defeat the entire
+            # purpose of what we are doing.
+            if (resp.http.X-Hash-Cookies) {
+                set resp.http.Set-Cookie = "hashcookies=" + resp.http.X-Hash-Cookies;
+            }
         }
     }
 
     sub vcl_hash {
-        # Cache even with cookies present. Note we don't delete the cookies.
-        # Also, we only consider cookies in X-Cookie-Hash as part of the hash.
-        # This value is set by the relevant Django Cache Headers policy.
-        set req.http.X-Cookie-Hash = "";
-        if (req.http.X-Hash-Cookies) {
-            set req.http.X-Cookie-Pattern = ";("  + req.http.X-Hash-Cookies + ")=";
-            set req.http.X-Cookie-Hash = ";" + req.http.Cookie;
-            # VCL does not currently support variables in regsuball, so hardcode
-            #set req.http.X-Cookie-Hash = regsuball(req.http.X-Cookie-Hash, req.http.X-Cookie-Pattern, "; \1=");
-            if (req.http.X-Cookie-Hash == "messages") {
-                    set req.http.X-Cookie-Hash = regsuball(req.http.X-Cookie-Hash, ";(messages)=", "; \1=");
+        # Cache even with cookies present. Note we don't delete the cookies. Also,
+        # we only consider cookies listed in the cookie named hashcookies as part
+        # of the hash. This list is determined by the relevant Django Cache Headers
+        # policy.
+        set req.http.Hash-Cookies = regsub(req.http.Cookie, ".*hashcookies=([^;]+).*", "\1");
+        set req.http.Hash-Value = "";
+        if (req.http.Hash-Cookies) {
+            # todo: softcode these checks
+            if (req.http.Hash-Cookies ~ "messages") {
+                if (req.http.Cookie ~ "messages=") {
+                    set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*messages=([^;]+).*", "\1");
+                }
             }
-            if (req.http.X-Cookie-Hash == "messages|isauthenticated") {
-                    set req.http.X-Cookie-Hash = regsuball(req.http.X-Cookie-Hash, ";(messages|isauthenticated)=", "; \1=");
+            if (req.http.Hash-Cookies == "messages|isauthenticated") {
+                if (req.http.Cookie ~ "isauthenticated=") {
+                    set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*isauthenticated=([^;]+).*", "\1");
+                }
             }
-            if (req.http.X-Cookie-Hash == "messages|sessionid") {
-                    set req.http.X-Cookie-Hash = regsuball(req.http.X-Cookie-Hash, ";(messages|sessionid)=", "; \1=");
+            else if (req.http.Hash-Cookies == "messages|sessionid") {
+                if (req.http.Cookie ~ "sessionid=") {
+                    set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*sessionid=([^;]+).*", "\1");
+                }
             }
-            set req.http.X-Cookie-Hash = regsuball(req.http.X-Cookie-Hash, ";[^ ][^;]*", "");
-            set req.http.X-Cookie-Hash = regsuball(req.http.X-Cookie-Hash, "^[; ]+|[; ]+$", "");
         }
-        hash_data(req.http.X-Cookie-Hash);
+        hash_data(req.http.Hash-Value);
+        unset req.http.Hash-Cookies;
+        unset req.http.Hash-Value;
     }
 
 Settings
