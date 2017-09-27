@@ -32,104 +32,7 @@ Django Cache Headers provides four caching policies. You may define your own pol
 Sample Varnish config file
 --------------------------
 
-Save this snippet as `/etc/varnish/default.vcl`::
-
-    # Use 4.0 format
-    vcl 4.0;
-
-    # Default upstream
-    backend default {
-        .host = "127.0.0.1";
-        .port = "8080";
-    }
-
-    # Access control
-    acl purge {
-        "localhost";
-        "127.0.0.1";
-    }
-
-    # vcl_recv adapted from the Varnish default
-    sub vcl_recv {
-        if (req.method == "PURGE") {
-            if (!client.ip ~ purge) {
-                return(synth(405, "Not allowed."));
-            }
-            return(purge);
-        }
-
-        if (req.method == "PRI") {
-            # We do not support SPDY or HTTP/2.0
-            return(synth(405));
-        }
-
-        if (req.method != "GET" &&
-          req.method != "HEAD" &&
-          req.method != "PUT" &&
-          req.method != "POST" &&
-          req.method != "TRACE" &&
-          req.method != "OPTIONS" &&
-          req.method != "DELETE") {
-            # Non-RFC2616 or CONNECT which is weird
-            return(pipe);
-        }
-
-        if (req.method != "GET" && req.method != "HEAD") {
-            # We only deal with GET and HEAD by default
-            return(pass);
-        }
-        if (req.http.Authorization) {
-            # Not cacheable by default
-            return(pass);
-        }
-        return(hash);
-    }
-
-    # Useful headers
-    sub vcl_deliver {
-        if (obj.hits > 0) {
-            set resp.http.X-Cache = "HIT";
-        } else {
-            set resp.http.X-Cache = "MISS";
-            # Django cache headers may not set the cookie directly because that
-            # leads to a Set-Cookie header. Varnish interprets the presence of that
-            # header as a "do not cache" instruction, which would defeat the entire
-            # purpose of what we are doing.
-            if (resp.http.X-Hash-Cookies) {
-                set resp.http.Set-Cookie = "hashcookies=" + resp.http.X-Hash-Cookies;
-            }
-        }
-    }
-
-    sub vcl_hash {
-        # Cache even with cookies present. Note we don't delete the cookies. Also,
-        # we only consider cookies listed in the cookie named hashcookies as part
-        # of the hash. This list is determined by the relevant Django Cache Headers
-        # policy.
-        set req.http.Hash-Cookies = regsub(req.http.Cookie, ".*hashcookies=([^;]+).*", "\1");
-        set req.http.Hash-Value = "";
-        if (req.http.Hash-Cookies) {
-            # todo: softcode these checks
-            if (req.http.Hash-Cookies ~ "messages") {
-                if (req.http.Cookie ~ "messages=") {
-                    set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*messages=([^;]+).*", "\1");
-                }
-            }
-            if (req.http.Hash-Cookies == "messages|isauthenticated") {
-                if (req.http.Cookie ~ "isauthenticated=") {
-                    set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*isauthenticated=([^;]+).*", "\1");
-                }
-            }
-            else if (req.http.Hash-Cookies == "messages|sessionid") {
-                if (req.http.Cookie ~ "sessionid=") {
-                    set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*sessionid=([^;]+).*", "\1");
-                }
-            }
-        }
-        hash_data(req.http.Hash-Value);
-        unset req.http.Hash-Cookies;
-        unset req.http.Hash-Value;
-    }
+Save the contents of `<sample.vcl>_` as `/etc/varnish/default.vcl`.
 
 Settings
 --------
@@ -165,4 +68,9 @@ The ``timeouts`` key combines the policy, timeout in seconds and URL regexes in 
             }
         }
     }
+
+Set ``browser-cache-seconds`` to specify how long the browser may cache a
+response before it has to revalidate with the server. It defaults to 5 seconds.::
+
+    CACHE_HEADERS = {"browser-cache-seconds": 10}
 

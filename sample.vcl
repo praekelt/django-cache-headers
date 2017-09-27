@@ -49,7 +49,14 @@ sub vcl_recv {
     return(hash);
 }
 
-# Useful headers
+sub vcl_backend_response {
+    # Make no assumptions about the state of vary before hand. All that is
+    # needed, is to temporarily replace Cookie in the Vary header while it
+    # gets passed through the rest of the Varnish functions.
+    set beresp.http.Original-Vary = beresp.http.Vary;
+    set beresp.http.Vary = regsub(beresp.http.Vary, "Cookie", "Substitute");
+}
+
 sub vcl_deliver {
     if (obj.hits > 0) {
         set resp.http.X-Cache = "HIT";
@@ -63,6 +70,12 @@ sub vcl_deliver {
             set resp.http.Set-Cookie = "hashcookies=" + resp.http.X-Hash-Cookies;
         }
     }
+
+    # Replace the original Vary header on the response
+    set resp.http.Vary = resp.http.Original-Vary;
+
+    # Unset the backup just in case
+    unset resp.http.Original-Vary;
 }
 
 sub vcl_hash {
@@ -71,7 +84,7 @@ sub vcl_hash {
     # of the hash. This list is determined by the relevant Django Cache Headers
     # policy.
     set req.http.Hash-Cookies = regsub(req.http.Cookie, ".*hashcookies=([^;]+).*", "\1");
-    set req.http.Hash-Value = "";
+    set req.http.Hash-Value = "x";
     if (req.http.Hash-Cookies) {
         # todo: softcode these checks
         if (req.http.Hash-Cookies ~ "messages") {
