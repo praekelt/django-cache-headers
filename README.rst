@@ -10,7 +10,11 @@ Overview
 
 Django Cache Headers allows you to set HTTP caching headers for URL patterns
 according to certain policies. It does not perform any caching itself - it
-merely sets the headers on the response which are then interpreted by eg. Nginx.
+merely sets the headers on the response which are then interpreted by eg. Varnish.
+
+Doing a truly zero-conf Varnish turned out to be fragile, so Django Cache
+Headers now generates a VCL file that can be included into or adapted to your
+default Varnish configuration file.
 
 Installation
 ------------
@@ -28,11 +32,6 @@ Django Cache Headers provides four caching policies. You may define your own pol
 2. anonymous-only - response is marked as cached once only for anonymous users.
 3. anonymous-and-authenticated - response is marked as cached once for anonymous users and once for authenticated users.
 4. per-user - response is marked as cached once for anonymous users and for each authenticated user individually.
-
-Sample Varnish config file
---------------------------
-
-Save the contents of `sample.vcl <sample.vcl>`_ as `/etc/varnish/default.vcl`.
 
 Settings
 --------
@@ -73,4 +72,14 @@ Set ``browser-cache-seconds`` to specify how long the browser may cache a
 response before it has to revalidate with the server. It defaults to 5 seconds.::
 
     CACHE_HEADERS = {"browser-cache-seconds": 10}
+
+Varnish configuration
+---------------------
+
+Generate the VCL snippet::
+
+    python manage.py generate_vcl > /path/to/generated.vcl
+
+Save the contents of `sample.vcl <sample.vcl>`_ as `/etc/varnish/default.vcl`.
+Restart Varnish for the configuration to take effect.
 
