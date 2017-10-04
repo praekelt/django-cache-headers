@@ -1,4 +1,6 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import SuspiciousOperation
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.test import TestCase
 
@@ -8,6 +10,8 @@ anonymous_only = reverse_lazy("anonymous-only")
 anonymous_and_authenticated = reverse_lazy("anonymous-and-authenticated")
 per_user = reverse_lazy("per-user")
 custom_policy = reverse_lazy("custom-policy")
+mylogin = reverse_lazy("mylogin")
+mylogout = reverse_lazy("mylogout")
 
 
 class CacheMiddlewareTest(TestCase):
@@ -15,10 +19,10 @@ class CacheMiddlewareTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         super(CacheMiddlewareTest, cls).setUpTestData()
-
         cls.user = get_user_model().objects.create(
             username="user",
-            email="user@test.com"
+            email="user@test.com",
+            is_active=True
         )
         cls.user.set_password("password")
         cls.user.save()
@@ -29,9 +33,45 @@ class CacheMiddlewareTest(TestCase):
 
     def login(self):
         self.client.login(username="user", password="password")
-        # Programmatic login does not do a subsequent redurect to set the
-        # is_authenticated cookie. Do an extra fetch to trigger that.
-        self.client.get(reverse("home"))
+
+    def test_auth_states(self):
+        """We never cache during login or logout"""
+
+        response = self.client.get(all_users)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "max-age=100, s-maxage=600")
+        )
+
+        # Do a full login, not the unit test shortcut login
+        response = self.client.post(
+            mylogin, {"username": "user", "password": "password"}
+        )
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "no-cache")
+        )
+
+        response = self.client.get(all_users)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "max-age=100, s-maxage=600")
+        )
+
+        # Do a full logout, not the unit test shortcut logout
+        response = self.client.get(mylogout)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "no-cache")
+        )
+
+        response = self.client.get(all_users)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "max-age=100, s-maxage=600")
+        )
+
+    def test_tampering(self):
+        """Reject spoofed sessionid cookies by anonymous users"""
+
+        with self.assertRaises(SuspiciousOperation):
+            self.client.cookies.load({settings.SESSION_COOKIE_NAME: "123"})
+            response = self.client.get(all_users)
 
     def test_all_users(self):
         response = self.client.get(all_users)
@@ -61,7 +101,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|isauthenticated")
+            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
         )
 
         self.login()
@@ -80,7 +120,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|isauthenticated")
+            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
         )
 
         self.login()
@@ -93,7 +133,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|isauthenticated")
+            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
         )
 
     def test_per_user(self):
@@ -106,7 +146,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|sessionid")
+            ("X-Hash-Cookies", "messages|%s" % settings.SESSION_COOKIE_NAME)
         )
 
         self.login()
@@ -119,7 +159,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|sessionid")
+            ("X-Hash-Cookies", "messages|%s" % settings.SESSION_COOKIE_NAME)
         )
 
     def test_custom_policy(self):

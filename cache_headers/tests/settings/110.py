@@ -9,7 +9,7 @@ BASE_DIR = os.path.join(
     "cache_headers"
 )
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 DATABASES = {

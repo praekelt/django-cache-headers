@@ -1,8 +1,16 @@
 from django.conf.urls import include, url
 from django.views.generic import TemplateView
 
+from cache_headers.tests import views
+
 
 urlpatterns = [
+    url(
+        r"^mylogin/$", views.mylogin, name="mylogin"
+    ),
+    url(
+        r"^mylogout/$", views.mylogout, name="mylogout"
+    ),
     url(
         r"^all-users/$",
         TemplateView.as_view(template_name="tests/view.html"),

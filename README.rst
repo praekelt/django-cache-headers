@@ -22,7 +22,8 @@ Installation
 1. Install or add ``django-cache-headers`` to your Python path.
 2. Add ``cache_headers`` to your ``INSTALLED_APPS`` setting.
 3. Add ``cache_headers.middleware.CacheHeadersMiddleware`` before
-   SessionMiddleware and AuthenticationMiddleware to your ``MIDDLEWARE_CLASSES`` setting.
+   SessionMiddleware and AuthenticationMiddleware and MessageMiddleware to your
+   ``MIDDLEWARE_CLASSES`` setting.
 
 Policies
 --------
