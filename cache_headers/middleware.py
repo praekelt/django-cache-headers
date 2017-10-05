@@ -70,8 +70,8 @@ class CacheHeadersMiddleware(object):
         # Default policy is to not cache
         response["Cache-Control"] = "no-cache"
 
-        # No caching on potentially erroneous usage
-        if "Set-Cookie" in response.cookies:
+        # Don't cache if response sets cookies
+        if response.cookies:
             logger = logging.getLogger("django")
             logger.warn(
                 "Attempting to cache path %s but Set-Cookie is on the response" \
