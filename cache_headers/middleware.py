@@ -70,15 +70,6 @@ class CacheHeadersMiddleware(object):
         # Default policy is to not cache
         response["Cache-Control"] = "no-cache"
 
-        # Don't cache if response sets cookies
-        if response.cookies:
-            logger = logging.getLogger("django")
-            logger.warn(
-                "Attempting to cache path %s but Set-Cookie is on the response" \
-                    % full_path
-            )
-            return response
-
         # If there is no user on the request then do nothing
         user = getattr(request, "user", None)
         if not user:
@@ -104,6 +95,15 @@ class CacheHeadersMiddleware(object):
 
         # Never cache non-GET
         if request.method.lower() not in ("get", "head"):
+            return response
+
+        # Don't cache if response sets cookies
+        if response.cookies:
+            logger = logging.getLogger("django")
+            logger.warn(
+                "Attempting to cache path %s but Set-Cookie is on the response" \
+                    % request.get_full_path()
+            )
             return response
 
         # Determine age and policy. Use cached lookups.
