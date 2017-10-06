@@ -41,7 +41,6 @@ rules.sort(key=lambda x: x[3], reverse=True)
 
 # Subscribe to signals so we can mark the request
 def on_user_auth_event(sender, user, request, **kwargs):
-    print "SET MARKER:"
     setattr(request, "_dch_auth_event", True)
 
 user_logged_in.connect(on_user_auth_event)
@@ -55,8 +54,8 @@ class CacheHeadersMiddleware(object):
     def process_response(self, request, response):
 
         # Do not interfere in debug mode
-        #if settings.DEBUG:
-        #    return response
+        if settings.DEBUG:
+            return response
 
         #import pdb;pdb.set_trace()
         # If cache control was set at the start of this method then do nothing
@@ -73,17 +72,12 @@ class CacheHeadersMiddleware(object):
         # If there is no user on the request then do nothing
         user = getattr(request, "user", None)
         if not user:
-            response["Cache-Control"] = "no-cache"
             return response
 
         # During login and logout we do not cache
-        print "CHECK FOR MARKER"
         if hasattr(request, "_dch_auth_event"):
-            print "GOT MARKER"
-            response["Cache-Control"] = "no-cache"
             return response
 
-        print "========================="
         # If user is anonymous but SESSION_COOKIE_NAME is in cookies and has a
         # value then this is an attempt at tampering.
         if user.is_anonymous() and (settings.SESSION_COOKIE_NAME in request.COOKIES):
@@ -98,7 +92,7 @@ class CacheHeadersMiddleware(object):
             return response
 
         # Don't cache if response sets cookies
-        if response.cookies:
+        if response.has_header("Set-Cookie"):
             logger = logging.getLogger("django")
             logger.warn(
                 "Attempting to cache path %s but Set-Cookie is on the response" \
