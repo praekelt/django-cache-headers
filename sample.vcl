@@ -71,7 +71,6 @@ sub vcl_backend_response {
     return (deliver);
 }
 
-
 sub vcl_deliver {
     if (obj.hits > 0) {
         set resp.http.X-Cache = "HIT";
