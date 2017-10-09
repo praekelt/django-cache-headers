@@ -14,6 +14,5 @@ def mylogin(request):
 
 
 def mylogout(request):
-    #import pdb;pdb.set_trace()
     logout(request)
     return HttpResponse("yay")

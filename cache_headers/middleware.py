@@ -57,7 +57,6 @@ class CacheHeadersMiddleware(object):
         if settings.DEBUG:
             return response
 
-        #import pdb;pdb.set_trace()
         # If cache control was set at the start of this method then do nothing
         if ("Cache-Control" in response) or ("cache-control" in response):
             return response
