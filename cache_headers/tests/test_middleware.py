@@ -1,3 +1,4 @@
+from django.contrib import auth
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import SuspiciousOperation
@@ -135,6 +136,61 @@ class CacheMiddlewareTest(TestCase):
             response._headers["x-hash-cookies"],
             ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
         )
+
+    def test_anonymous_and_authenticated_login_path(self):
+        # Do a full login, not the unit test shortcut login
+        response = self.client.post(
+            mylogin, {"username": "user", "password": "password"}, follow=True
+        )
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "no-cache")
+        )
+        user = auth.get_user(response.client)
+        self.assertTrue(user.is_authenticated())
+        self.assertEqual(user, self.user)
+
+        # Check headers on anon and auth view after login
+        response = self.client.get(anonymous_and_authenticated)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "max-age=100, s-maxage=600")
+        )
+        self.assertEqual(
+            response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
+        )
+        self.assertEqual(
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+        )
+
+        # Make sure user is still authenticated
+        user = auth.get_user(response.client)
+        self.assertTrue(user.is_authenticated())
+        self.assertEqual(user, self.user)
+
+        # Do a full logout, not the unit test shortcut logout
+        response = self.client.get(mylogout, follow=True)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "no-cache")
+        )
+
+        # Make sure user session is empty
+        self.assertTrue(len(response.client.session.keys()) is 0)
+
+        # Check headers on anon and auth view after logout
+        response = self.client.get(anonymous_and_authenticated)
+        self.assertEqual(
+            response._headers["cache-control"], ("Cache-Control", "max-age=100, s-maxage=600")
+        )
+        self.assertEqual(
+            response._headers["x-accel-expires"], ("X-Accel-Expires", "600")
+        )
+        self.assertEqual(
+            response._headers["x-hash-cookies"],
+            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+        )
+
+        # Make sure user session is still empty
+        self.assertTrue(len(response.client.session.keys()) is 0)
 
     def test_per_user(self):
         response = self.client.get(per_user)
