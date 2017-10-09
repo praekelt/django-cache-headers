@@ -42,7 +42,7 @@ TEMPLATE_B = """
 
     unset req.http.Hash-Cookies;
     unset req.http.Hash-Value;
-}""" % ("sessionid": settings.SESSION_COOKIE_NAME)
+}""" % {"sessionid": settings.SESSION_COOKIE_NAME}
 
 
 class Command(BaseCommand):
