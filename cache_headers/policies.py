@@ -10,6 +10,11 @@ try:
 except (KeyError, AttributeError):
     browser_cache_seconds = 5
 
+# We add Cookie to Vary in all cases to compensate for overzealous intermediary
+# proxies we have no control over. The presence of Cookie will avoid any
+# accidental shared caching of per-user content. Our sample Varnish
+# configuration file is smart enough to omit Cookie from the Vary header when
+# computing the hash.
 
 def all_users(request, response, user, age):
     """Content is cached once for all users."""
@@ -32,10 +37,12 @@ def anonymous_only(request, response, user, age):
         response["X-Accel-Expires"] = age
         response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
             % (browser_cache_seconds, age)
-        response["X-Hash-Cookies"] = "messages"
-        response["Vary"] = "Accept-Encoding,Cookie"
     else:
         response["Cache-Control"] = "no-cache"
+
+    response["X-Hash-Cookies"] = "messages|%s-bool" \
+        % settings.SESSION_COOKIE_NAME
+    response["Vary"] = "Accept-Encoding,Cookie"
 
 
 def anonymous_and_authenticated(request, response, user, age):
@@ -47,7 +54,8 @@ def anonymous_and_authenticated(request, response, user, age):
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
         % (browser_cache_seconds, age)
-    response["X-Hash-Cookies"] = "messages|isauthenticated"
+    response["X-Hash-Cookies"] = "messages|%s-bool" \
+        % settings.SESSION_COOKIE_NAME
     response["Vary"] = "Accept-Encoding,Cookie"
 
 
@@ -60,5 +68,5 @@ def per_user(request, response, user, age):
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
         % (browser_cache_seconds, age)
-    response["X-Hash-Cookies"] = "messages|sessionid"
+    response["X-Hash-Cookies"] = "messages|%s" % settings.SESSION_COOKIE_NAME
     response["Vary"] = "Accept-Encoding,Cookie"

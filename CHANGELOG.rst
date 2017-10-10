@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.3
+---
+#. Added vcl generation management command, to be used in tandem with varnish. sample.vcl updated to reflect usage.
+#. Make use of on_user_auth_event to ensure no-cache header is set during login and logout.
+#. Extra protection against tampered session cookie.
+#. Policies no longer makes an assumption on the session cookie name.
+
 0.2.2
 -----
 #. Iterate over regexes in order of most specific (longest) to least specific (shortest).
