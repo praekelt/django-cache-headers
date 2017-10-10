@@ -1,10 +1,12 @@
 from __future__ import print_function
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.http.response import HttpResponse
 from django.test.client import RequestFactory
+
 from cache_headers.middleware import POLICIES, rules
 
 
@@ -24,14 +26,14 @@ TEMPLATE_B = """
                 set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*messages=([^;]+).*", "\\1");
             }
         }
-        if (req.http.Hash-Cookies == "messages|isauthenticated") {
-            if (req.http.Cookie ~ "isauthenticated=") {
-                set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*isauthenticated=([^;]+).*", "\\1");
+        if (req.http.Hash-Cookies == "messages|%(sessionid)s-bool") {
+            if (req.http.Cookie ~ "%(sessionid)s=") {
+                set req.http.Hash-Value = req.http.Hash-Value + "1";
             }
         }
-        else if (req.http.Hash-Cookies == "messages|sessionid") {
-            if (req.http.Cookie ~ "sessionid=") {
-                set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*sessionid=([^;]+).*", "\\1");
+        else if (req.http.Hash-Cookies == "messages|%(sessionid)s") {
+            if (req.http.Cookie ~ "%(sessionid)s=") {
+                set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*%(sessionid)s=([^;]+).*", "\\1");
             }
         }
     }
@@ -40,7 +42,7 @@ TEMPLATE_B = """
 
     unset req.http.Hash-Cookies;
     unset req.http.Hash-Value;
-}"""
+}""" % {"sessionid": settings.SESSION_COOKIE_NAME}
 
 
 class Command(BaseCommand):

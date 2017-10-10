@@ -40,7 +40,8 @@ def anonymous_only(request, response, user, age):
     else:
         response["Cache-Control"] = "no-cache"
 
-    response["X-Hash-Cookies"] = "messages|isauthenticated"
+    response["X-Hash-Cookies"] = "messages|%s-bool" \
+        % settings.SESSION_COOKIE_NAME
     response["Vary"] = "Accept-Encoding,Cookie"
 
 
@@ -53,7 +54,8 @@ def anonymous_and_authenticated(request, response, user, age):
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
         % (browser_cache_seconds, age)
-    response["X-Hash-Cookies"] = "messages|isauthenticated"
+    response["X-Hash-Cookies"] = "messages|%s-bool" \
+        % settings.SESSION_COOKIE_NAME
     response["Vary"] = "Accept-Encoding,Cookie"
 
 
@@ -66,5 +68,5 @@ def per_user(request, response, user, age):
     response["X-Accel-Expires"] = age
     response["Cache-Control"] = "max-age=%d, s-maxage=%d" \
         % (browser_cache_seconds, age)
-    response["X-Hash-Cookies"] = "messages|sessionid"
+    response["X-Hash-Cookies"] = "messages|%s" % settings.SESSION_COOKIE_NAME
     response["Vary"] = "Accept-Encoding,Cookie"
