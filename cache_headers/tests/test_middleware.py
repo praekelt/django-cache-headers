@@ -174,7 +174,7 @@ class CacheMiddlewareTest(TestCase):
         )
 
         # Make sure user session is empty
-        self.assertTrue(len(response.client.session.keys()) is 0)
+        self.assertTrue(len(response.client.session.keys()) == 0)
 
         # Check headers on anon and auth view after logout
         response = self.client.get(anonymous_and_authenticated)
@@ -190,7 +190,7 @@ class CacheMiddlewareTest(TestCase):
         )
 
         # Make sure user session is still empty
-        self.assertTrue(len(response.client.session.keys()) is 0)
+        self.assertTrue(len(response.client.session.keys()) == 0)
 
     def test_per_user(self):
         response = self.client.get(per_user)
