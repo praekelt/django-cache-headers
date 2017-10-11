@@ -98,10 +98,22 @@ class CacheHeadersMiddleware(object):
                     )
 
         # Check more tampering
-        if user.is_anonymous() and ("isauthenticated" in request.COOKIES):
-            raise SuspiciousOperation(
-                "User is anonymous but sent an isauthenticated cookie"
-            )
+        if getattr(settings, "CACHE_HEADERS", {}).get(
+            "enable-tampering-checks", False
+        ):
+            if user.is_anonymous():
+                value = request.COOKIES.get("isauthenticated", None)
+                if value not in (None, ""):
+                    raise SuspiciousOperation(
+                        "User is anonymous but sent an isauthenticated cookie"
+                    )
+
+            if user.is_authenticated():
+                value = request.COOKIES.get("isauthenticated", None)
+                if value != "1":
+                    raise SuspiciousOperation(
+                        "User is authenticated, but did not send valid isauthenticated cookie"
+                    )
 
         # Never cache non-GET
         if request.method.lower() not in ("get", "head"):
