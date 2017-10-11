@@ -77,6 +77,11 @@ class CacheHeadersMiddleware(object):
 
         # During login and logout we do not cache
         if hasattr(request, "_dch_auth_event"):
+            if user.is_authenticated():
+                expires = request.session.get_expiry_date()
+                response.set_cookie("isauthenticated", 1, expires=expires)
+            else:
+                response.delete_cookie("isauthenticated")
             return response
 
         # We use the sessionid in Varnish rules to determine whether as user is
@@ -91,6 +96,12 @@ class CacheHeadersMiddleware(object):
                     raise SuspiciousOperation(
                         "User has an invalid sessionid"
                     )
+
+        # Check more tampering
+        if user.is_anonymous() and ("isauthenticated" in request.COOKIES):
+            raise SuspiciousOperation(
+                "User is anonymous but sent an isauthenticated cookie"
+            )
 
         # Never cache non-GET
         if request.method.lower() not in ("get", "head"):

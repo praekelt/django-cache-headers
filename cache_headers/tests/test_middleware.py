@@ -102,7 +102,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+            ("X-Hash-Cookies", "messages")
         )
 
         self.login()
@@ -121,7 +121,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
 
         self.login()
@@ -134,7 +134,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
 
     def test_anonymous_and_authenticated_login_path(self):
@@ -159,7 +159,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
 
         # Make sure user is still authenticated
@@ -186,7 +186,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages|%s-bool" % settings.SESSION_COOKIE_NAME)
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
 
         # Make sure user session is still empty
