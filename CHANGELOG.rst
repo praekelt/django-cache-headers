@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.1
+-----
+#. An anonymous user may in fact have a session. Handle this case gracefully.
+
 0.3
 ---
 #. Added vcl generation management command, to be used in tandem with varnish. sample.vcl updated to reflect usage.

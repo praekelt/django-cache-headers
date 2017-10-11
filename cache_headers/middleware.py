@@ -2,8 +2,10 @@ import hashlib
 import logging
 import re
 import uuid
+from importlib import import_module
 
 from django.conf import settings
+from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
@@ -57,6 +59,19 @@ class CacheHeadersMiddleware(object):
         if settings.DEBUG:
             return response
 
+        # If there is no user on the request then do nothing
+        user = getattr(request, "user", None)
+        if not user:
+            return response
+
+        # Set or delete isauthenticated cookie
+        if hasattr(request, "_dch_auth_event"):
+            if user.is_authenticated():
+                expires = request.session.get_expiry_date()
+                response.set_cookie("isauthenticated", 1, expires=expires)
+            else:
+                response.delete_cookie("isauthenticated")
+
         # If cache control was set at the start of this method then do nothing
         if ("Cache-Control" in response) or ("cache-control" in response):
             return response
@@ -68,23 +83,40 @@ class CacheHeadersMiddleware(object):
         # Default policy is to not cache
         response["Cache-Control"] = "no-cache"
 
-        # If there is no user on the request then do nothing
-        user = getattr(request, "user", None)
-        if not user:
-            return response
-
         # During login and logout we do not cache
         if hasattr(request, "_dch_auth_event"):
             return response
 
-        # If user is anonymous but SESSION_COOKIE_NAME is in cookies and has a
-        # value then this is an attempt at tampering.
-        if user.is_anonymous() and (settings.SESSION_COOKIE_NAME in request.COOKIES):
+        # We use the sessionid in Varnish rules to determine whether as user is
+        # authenticated or not. Check for a valid session to prevent cache
+        # poisoning.
+        if settings.SESSION_COOKIE_NAME in request.COOKIES:
             cookie = request.COOKIES[settings.SESSION_COOKIE_NAME]
-            if getattr(cookie, "value", cookie):
-                raise SuspiciousOperation(
-                    "User is anonymous but received a sessionid"
-                )
+            sessionid = getattr(cookie, "value", cookie)
+            if sessionid:
+                store = import_module(settings.SESSION_ENGINE).SessionStore(SESSION_KEY)
+                if not store._validate_session_key(sessionid):
+                    raise SuspiciousOperation(
+                        "User has an invalid sessionid"
+                    )
+
+        # Check more tampering
+        if getattr(settings, "CACHE_HEADERS", {}).get(
+            "enable-tampering-checks", False
+        ):
+            if user.is_anonymous():
+                value = request.COOKIES.get("isauthenticated", None)
+                if value not in (None, ""):
+                    raise SuspiciousOperation(
+                        "User is anonymous but sent an isauthenticated cookie"
+                    )
+
+            if user.is_authenticated():
+                value = request.COOKIES.get("isauthenticated", None)
+                if value != "1":
+                    raise SuspiciousOperation(
+                        "User is authenticated, but did not send valid isauthenticated cookie"
+                    )
 
         # Never cache non-GET
         if request.method.lower() not in ("get", "head"):

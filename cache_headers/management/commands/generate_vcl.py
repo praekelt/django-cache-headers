@@ -26,8 +26,8 @@ TEMPLATE_B = """
                 set req.http.Hash-Value = req.http.Hash-Value + regsub(req.http.Cookie, ".*messages=([^;]+).*", "\\1");
             }
         }
-        if (req.http.Hash-Cookies == "messages|%(sessionid)s-bool") {
-            if (req.http.Cookie ~ "%(sessionid)s=") {
+        if (req.http.Hash-Cookies == "messages|isauthenticated") {
+            if (req.http.Cookie ~ "isauthenticated=1") {
                 set req.http.Hash-Value = req.http.Hash-Value + "1";
             }
         }

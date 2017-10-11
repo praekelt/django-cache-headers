@@ -74,6 +74,13 @@ response before it has to revalidate with the server. It defaults to 5 seconds.:
 
     CACHE_HEADERS = {"browser-cache-seconds": 10}
 
+Set ``enable-tampering-checks`` to enable checks that guard against cache
+poising by tampering with the cookies.
+Keep this disabled for most unit tests. Unit test's client.login() does not
+trigger the normal expected login path.
+
+    CACHE_HEADERS = {"enable-tampering-checks": True}
+
 Varnish configuration
 ---------------------
 
