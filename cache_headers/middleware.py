@@ -59,6 +59,19 @@ class CacheHeadersMiddleware(object):
         if settings.DEBUG:
             return response
 
+        # If there is no user on the request then do nothing
+        user = getattr(request, "user", None)
+        if not user:
+            return response
+
+        # Set or delete isauthenticated cookie
+        if hasattr(request, "_dch_auth_event"):
+            if user.is_authenticated():
+                expires = request.session.get_expiry_date()
+                response.set_cookie("isauthenticated", 1, expires=expires)
+            else:
+                response.delete_cookie("isauthenticated")
+
         # If cache control was set at the start of this method then do nothing
         if ("Cache-Control" in response) or ("cache-control" in response):
             return response
@@ -70,18 +83,8 @@ class CacheHeadersMiddleware(object):
         # Default policy is to not cache
         response["Cache-Control"] = "no-cache"
 
-        # If there is no user on the request then do nothing
-        user = getattr(request, "user", None)
-        if not user:
-            return response
-
         # During login and logout we do not cache
         if hasattr(request, "_dch_auth_event"):
-            if user.is_authenticated():
-                expires = request.session.get_expiry_date()
-                response.set_cookie("isauthenticated", 1, expires=expires)
-            else:
-                response.delete_cookie("isauthenticated")
             return response
 
         # We use the sessionid in Varnish rules to determine whether as user is
