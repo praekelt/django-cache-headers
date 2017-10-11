@@ -27,7 +27,7 @@ TEMPLATE_B = """
             }
         }
         if (req.http.Hash-Cookies == "messages|isauthenticated") {
-            if (req.http.Cookie ~ "isauthenticated=") {
+            if (req.http.Cookie ~ "isauthenticated=1") {
                 set req.http.Hash-Value = req.http.Hash-Value + "1";
             }
         }
