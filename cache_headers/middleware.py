@@ -2,8 +2,10 @@ import hashlib
 import logging
 import re
 import uuid
+from importlib import import_module
 
 from django.conf import settings
+from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.core.cache import cache
 from django.core.exceptions import SuspiciousOperation
@@ -77,14 +79,18 @@ class CacheHeadersMiddleware(object):
         if hasattr(request, "_dch_auth_event"):
             return response
 
-        # If user is anonymous but SESSION_COOKIE_NAME is in cookies and has a
-        # value then this is an attempt at tampering.
-        if user.is_anonymous() and (settings.SESSION_COOKIE_NAME in request.COOKIES):
+        # We use the sessionid in Varnish rules to determine whether as user is
+        # authenticated or not. Check for a valid session to prevent cache
+        # poisoning.
+        if settings.SESSION_COOKIE_NAME in request.COOKIES:
             cookie = request.COOKIES[settings.SESSION_COOKIE_NAME]
-            if getattr(cookie, "value", cookie):
-                raise SuspiciousOperation(
-                    "User is anonymous but received a sessionid"
-                )
+            sessionid = getattr(cookie, "value", cookie)
+            if sessionid:
+                store = import_module(settings.SESSION_ENGINE).SessionStore(SESSION_KEY)
+                if not store._validate_session_key(sessionid):
+                    raise SuspiciousOperation(
+                        "User has an invalid sessionid"
+                    )
 
         # Never cache non-GET
         if request.method.lower() not in ("get", "head"):
