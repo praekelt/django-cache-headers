@@ -1,6 +1,10 @@
 Changelog
 =========
 
+next
+----
+#. Ensure isauthenticated cookie expires at end of session if session is set to do so.
+
 0.3.1
 -----
 #. An anonymous user may in fact have a session. Handle this case gracefully.
