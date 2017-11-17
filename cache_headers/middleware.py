@@ -67,8 +67,11 @@ class CacheHeadersMiddleware(object):
         # Set or delete isauthenticated cookie
         if hasattr(request, "_dch_auth_event"):
             if user.is_authenticated():
-                expires = request.session.get_expiry_date()
-                response.set_cookie("isauthenticated", 1, expires=expires)
+                if request.session.get_expire_at_browser_close():
+                    response.set_cookie("isauthenticated", 1, max_age=None)
+                else:
+                    expires = request.session.get_expiry_date()
+                    response.set_cookie("isauthenticated", 1, expires=expires)
             else:
                 response.delete_cookie("isauthenticated")
 
