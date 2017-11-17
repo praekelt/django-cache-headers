@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.2
+-----
 #. Ensure isauthenticated cookie expires at end of session if session is set to do so.
 
 0.3.1

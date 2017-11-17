@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="django-cache-headers",
-    version="0.3.1",
+    version="0.3.2",
     description="Configurable middleware to add HTTP caching headers for URL's.",
     long_description = open("README.rst", "r").read() + open("AUTHORS.rst", "r").read() + open("CHANGELOG.rst", "r").read(),
     author="Praekelt Consulting",
