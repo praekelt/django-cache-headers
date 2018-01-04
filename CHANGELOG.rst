@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.3
+-----
+#. Fix anonymous-only policy to consider isauthenticated cookie.
+
 0.3.2
 -----
 #. Ensure isauthenticated cookie expires at end of session if session is set to do so.

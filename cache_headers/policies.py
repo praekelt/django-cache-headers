@@ -40,7 +40,7 @@ def anonymous_only(request, response, user, age):
     else:
         response["Cache-Control"] = "no-cache"
 
-    response["X-Hash-Cookies"] = "messages"
+    response["X-Hash-Cookies"] = "messages|isauthenticated"
     response["Vary"] = "Accept-Encoding,Cookie"
 
 

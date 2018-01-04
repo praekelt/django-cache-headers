@@ -102,7 +102,7 @@ class CacheMiddlewareTest(TestCase):
         )
         self.assertEqual(
             response._headers["x-hash-cookies"],
-            ("X-Hash-Cookies", "messages")
+            ("X-Hash-Cookies", "messages|isauthenticated")
         )
 
         self.login()
