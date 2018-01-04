@@ -1,8 +1,8 @@
 Changelog
 =========
 
-next
-----
+0.3.3
+-----
 #. Fix anonymous-only policy to consider isauthenticated cookie.
 
 0.3.2
