@@ -8,8 +8,8 @@ from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.core.cache import cache
-from django.core.exceptions import SuspiciousOperation
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.utils.deprecation import MiddlewareMixin
 
 from cache_headers import policies
 
@@ -49,7 +49,7 @@ user_logged_in.connect(on_user_auth_event)
 user_logged_out.connect(on_user_auth_event)
 
 
-class CacheHeadersMiddleware(object):
+class CacheHeadersMiddleware(MiddlewareMixin):
     """Put this middleware before authentication middleware because response
     runs in reverse order."""
 
@@ -66,7 +66,7 @@ class CacheHeadersMiddleware(object):
 
         # Set or delete isauthenticated cookie
         if hasattr(request, "_dch_auth_event"):
-            if user.is_authenticated():
+            if user.is_authenticated:
                 if request.session.get_expire_at_browser_close():
                     response.set_cookie("isauthenticated", 1, max_age=None)
                 else:
@@ -99,7 +99,7 @@ class CacheHeadersMiddleware(object):
             if sessionid:
                 store = import_module(settings.SESSION_ENGINE).SessionStore(SESSION_KEY)
                 if not store._validate_session_key(sessionid):
-                    raise SuspiciousOperation(
+                    return HttpResponseBadRequest(
                         "User has an invalid sessionid"
                     )
 
@@ -107,17 +107,17 @@ class CacheHeadersMiddleware(object):
         if getattr(settings, "CACHE_HEADERS", {}).get(
             "enable-tampering-checks", False
         ):
-            if user.is_anonymous():
+            if user.is_anonymous:
                 value = request.COOKIES.get("isauthenticated", None)
                 if value not in (None, ""):
-                    raise SuspiciousOperation(
+                    return HttpResponseBadRequest(
                         "User is anonymous but sent an isauthenticated cookie"
                     )
 
-            if user.is_authenticated():
+            if user.is_authenticated:
                 value = request.COOKIES.get("isauthenticated", None)
                 if value != "1":
-                    raise SuspiciousOperation(
+                    return HttpResponseBadRequest(
                         "User is authenticated, but did not send valid isauthenticated cookie"
                     )
 
@@ -136,7 +136,7 @@ class CacheHeadersMiddleware(object):
 
         # Determine age and policy. Use cached lookups.
         full_path = request.get_full_path()
-        key = "dch-%s" % hashlib.md5(full_path).hexdigest()
+        key = "dch-%s" % hashlib.md5(full_path.encode("utf-8")).hexdigest()
         cached = cache.get(key, None)
         if cached is not None:
             age = cached["age"]

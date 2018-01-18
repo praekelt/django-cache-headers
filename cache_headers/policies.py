@@ -31,7 +31,7 @@ def all_users(request, response, user, age):
 def anonymous_only(request, response, user, age):
     """Content is cached once only for anonymous users."""
 
-    if user.is_anonymous():
+    if user.is_anonymous:
         response["Last-Modified"] = httpdate(datetime.datetime.utcnow())
         # nginx specific but safe to set in all cases
         response["X-Accel-Expires"] = age

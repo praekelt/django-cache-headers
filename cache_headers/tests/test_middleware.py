@@ -2,8 +2,8 @@ from django.contrib import auth
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import SuspiciousOperation
-from django.core.urlresolvers import reverse, reverse_lazy
 from django.test import TestCase
+from django.urls import reverse, reverse_lazy
 
 
 all_users = reverse_lazy("all-users")
@@ -70,9 +70,9 @@ class CacheMiddlewareTest(TestCase):
     def test_tampering(self):
         """Reject spoofed sessionid cookies by anonymous users"""
 
-        with self.assertRaises(SuspiciousOperation):
-            self.client.cookies.load({settings.SESSION_COOKIE_NAME: "123"})
-            response = self.client.get(all_users)
+        self.client.cookies.load({settings.SESSION_COOKIE_NAME: "123"})
+        response = self.client.get(all_users)
+        self.assertEqual(response.status_code, 400)
 
     def test_all_users(self):
         response = self.client.get(all_users)
@@ -149,7 +149,7 @@ class CacheMiddlewareTest(TestCase):
                 response._headers["cache-control"], ("Cache-Control", "no-cache")
             )
             user = auth.get_user(response.client)
-            self.assertTrue(user.is_authenticated())
+            self.assertTrue(user.is_authenticated)
             self.assertEqual(user, self.user)
 
             # Check headers on anon and auth view after login
@@ -167,7 +167,7 @@ class CacheMiddlewareTest(TestCase):
 
             # Make sure user is still authenticated
             user = auth.get_user(response.client)
-            self.assertTrue(user.is_authenticated())
+            self.assertTrue(user.is_authenticated)
             self.assertEqual(user, self.user)
 
             # Do a full logout, not the unit test shortcut logout
