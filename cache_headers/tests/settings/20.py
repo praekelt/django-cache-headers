@@ -9,7 +9,7 @@ BASE_DIR = os.path.join(
     "cache_headers"
 )
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 DATABASES = {
@@ -31,7 +31,7 @@ INSTALLED_APPS = (
 
 SECRET_KEY = "SECRET_KEY"
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     "cache_headers.middleware.CacheHeadersMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
